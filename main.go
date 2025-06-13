@@ -74,8 +74,6 @@ func main() {
 		showHelp()
 	case "version":
 		showVersion()
-	case "about":
-		showAbout()
 	case "contact":
 		showContact()
 
