@@ -27,7 +27,11 @@ func main() {
 		description := args[2]
 		addTask(description)
 	case "list":
-		listTasks()
+		statusFilter := ""
+		if len(args) > 2 {
+			statusFilter = args[2]
+		}
+		listTasks(statusFilter)
 
 	case "mark-in-progress":
 		if len(args) < 3 {
@@ -58,6 +62,22 @@ func main() {
 			fmt.Println("New description:--->>>", newDiscription)
 		}
 		updateTask(args[2], newDiscription)
+
+	case "delete":
+		if len(args) < 3 {
+			fmt.Println("Please provide task ID to delete.")
+			return
+		}
+		deleteTask(args[2])
+
+	case "help":
+		showHelp()
+	case "version":
+		showVersion()
+	case "about":
+		showAbout()
+	case "contact":
+		showContact()
 
 	default:
 		fmt.Println("Unknown command:", command)
@@ -137,22 +157,31 @@ func addTask(description string) {
 	fmt.Printf("Task added successfully (ID: %d)\n", newTask.ID)
 }
 
-func listTasks() {
+func listTasks(statusFilter string) {
 	tasks, err := LoadTasks()
 	if err != nil {
 		fmt.Println("Error loading tasks:", err)
 		return
 	}
 
-	if len(tasks) == 0 {
+	filtered := []Task{}
+	for _, task := range tasks {
+		if statusFilter == "" || task.Status == statusFilter {
+			filtered = append(filtered, task)
+		}
+	}
+
+	if len(filtered) == 0 {
 		fmt.Println("No tasks found.")
 		return
 	}
 
 	fmt.Println("Tasks:")
 	for _, task := range tasks {
-		fmt.Printf("ID: %d | Description: %s | Status: %s | Created At: %s | Updated At: %s\n",
-			task.ID, task.Description, task.Status, task.CreatedAt, task.UpdatedAt)
+		if statusFilter == "" || task.Status == statusFilter {
+			fmt.Printf("ID: %d | Description: %s | Status: %s | Created At: %s | Updated At: %s\n",
+				task.ID, task.Description, task.Status, task.CreatedAt, task.UpdatedAt)
+		}
 	}
 }
 
@@ -228,4 +257,67 @@ func updateTask(idStr string, newDescribtion string) {
 	}
 
 	fmt.Printf("Task ID %d updated seccessfully.\n", id)
+}
+
+func deleteTask(idStr string) {
+	tasks, err := LoadTasks()
+	if err != nil {
+		fmt.Println("Error loading tasks:", err)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println("Invalid task ID:", idStr)
+		return
+	}
+
+	index := -1
+	for i, task := range tasks {
+		if task.ID == id {
+			index = i
+			break
+		}
+	}
+
+	if index == -1 {
+		fmt.Printf("Task with ID %d not found./n", id)
+		return
+	}
+
+	// remove the task
+	tasks = append(tasks[:index], tasks[index+1:]...)
+
+	err = SaveTasks(tasks)
+	if err != nil {
+		fmt.Println("Error saving tasks:", err)
+		return
+	}
+
+	fmt.Printf("Task ID %d deleted successfully.\n", id)
+}
+
+func showHelp() {
+	fmt.Println("Task CLI - Simple Task Manager")
+	fmt.Println("")
+	fmt.Println("Usage:")
+	fmt.Println("  add <description>               - Add new task")
+	fmt.Println("  list [status]                   - List tasks (optional: todo, in-progress, done)")
+	fmt.Println("  update <id> <new description>   - Update task description")
+	fmt.Println("  mark-in-progress <id>           - Mark task as in-progress")
+	fmt.Println("  mark-done <id>                  - Mark task as done")
+	fmt.Println("  delete <id>                     - Delete task")
+	fmt.Println("  version                          - Show version info")
+	fmt.Println("  contact                          - Show contact info")
+}
+
+func showVersion() {
+	fmt.Println("Task CLI Version 1.0.0")
+	fmt.Println("Built with Go")
+}
+
+func showContact() {
+	fmt.Println("Created by Reza Barzegar Gashti")
+	fmt.Println("GitHub: https://github.com/rezaBG")
+	fmt.Println("Email: rezabarzegargashti@example.com")
 }
