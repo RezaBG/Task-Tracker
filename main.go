@@ -43,6 +43,22 @@ func main() {
 		}
 		markTask(args[2], "done")
 
+	case "update":
+		if len(args) < 4 {
+			fmt.Println("Please provide task ID and new description.")
+			return
+		}
+		// Combine all remining arguments into full description
+		newDiscription := ""
+		for i := 3; i < len(args); i++ {
+			if i > 3 {
+				newDiscription += " "
+			}
+			newDiscription += args[i]
+			fmt.Println("New description:--->>>", newDiscription)
+		}
+		updateTask(args[2], newDiscription)
+
 	default:
 		fmt.Println("Unknown command:", command)
 	}
@@ -175,4 +191,41 @@ func markTask(idStr string, status string) {
 	}
 
 	fmt.Printf("Task ID %d marked as %s successfully.\n", id, status)
+}
+
+func updateTask(idStr string, newDescribtion string) {
+	tasks, err := LoadTasks()
+	if err != nil {
+		fmt.Println("Error loading tasks:", err)
+		return
+	}
+
+	id, err := strconv.Atoi(idStr)
+	if err != nil {
+		fmt.Println("Invalid task ID:", idStr)
+		return
+	}
+
+	updated := false
+	for i, task := range tasks {
+		if task.ID == id {
+			tasks[i].Description = newDescribtion
+			tasks[i].UpdatedAt = time.Now().Format(time.RFC3339)
+			updated = true
+			break
+		}
+	}
+
+	if !updated {
+		fmt.Printf("Task with ID %d not found.\n", id)
+		return
+	}
+
+	err = SaveTasks(tasks)
+	if err != nil {
+		fmt.Println("Error saving tasks:", err)
+		return
+	}
+
+	fmt.Printf("Task ID %d updated seccessfully.\n", id)
 }
